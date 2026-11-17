@@ -45,6 +45,11 @@ export const metadata: Metadata = {
     canonical: "/",
   },
 
+  // Google AdSense site verification — must be in <head> for the crawler.
+  other: {
+    "google-adsense-account": "ca-pub-7862857287477025",
+  },
+
   openGraph: {
     title: "GTA 6 AI Assistant – Ask Anything About Grand Theft Auto VI",
     description: META_DESCRIPTION,
@@ -70,8 +75,13 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
-        {/* Google AdSense */}
-        <Script
+        {/*
+          AdSense verification: use a plain <script> tag (not Next.js <Script>)
+          so it appears in the SSR HTML that the Google crawler reads.
+          The google-adsense-account meta is declared in the metadata export above.
+        */}
+        {/* eslint-disable-next-line @next/next/no-sync-scripts */}
+        <script
           async
           src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-7862857287477025"
           crossOrigin="anonymous"

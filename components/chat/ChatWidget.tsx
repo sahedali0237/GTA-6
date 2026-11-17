@@ -81,14 +81,7 @@ export function ChatWidget() {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const listRef = useRef<HTMLDivElement>(null);
 
-  const { messages, setMessages, setInput: setChatInput, input, append, stop, status } = useChat({
-    api: "/api/chat",
-    headers: { "x-gta6-client": "1" },
-    fetch: trimmingFetch.current,
-  });
-
-  const isStreaming = status === "submitted" || status === "streaming";
-
+  // NOTE: handleError must be defined before useChat so it can be passed as onError.
   const handleError = useCallback((error: unknown) => {
     if (typeof navigator !== "undefined" && !navigator.onLine) {
       setBanner(MESSAGES.offline);
@@ -105,6 +98,20 @@ export function ChatWidget() {
     }
     setBanner(MESSAGES.badRequest);
   }, []);
+
+  const { messages, setMessages, setInput: setChatInput, input, append, stop, status } = useChat({
+    api: "/api/chat",
+    headers: { "x-gta6-client": "1" },
+    fetch: trimmingFetch.current,
+    onError: handleError,
+    onFinish: () => {
+      // Increment quota only after the server successfully completes a response.
+      incrementQuota();
+      setRemaining(remainingQuota());
+    },
+  });
+
+  const isStreaming = status === "submitted" || status === "streaming";
 
   // Restore the current conversation from sessionStorage (per-tab, no server storage).
   useEffect(() => {
@@ -170,11 +177,9 @@ export function ChatWidget() {
       setBanner(null);
       setChatInput("");
       try {
-        // NOTE: Quota increments on each send dispatched to the server; the
-        // server-side daily limiter remains the authority (spec §5.3).
+        // NOTE: Server-side daily limiter is the authority (spec §5.3).
+        // Quota is incremented in onFinish only after a successful response.
         await append({ role: "user", content: trimmed });
-        incrementQuota();
-        setRemaining(remainingQuota());
       } catch (error) {
         handleError(error);
       }

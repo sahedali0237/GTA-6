@@ -1,5 +1,5 @@
 export const CONFIG = {
-  SITE_URL: "https://example.com",
+  SITE_URL: process.env.NEXT_PUBLIC_APP_URL ?? "https://example.com",
   SITE_NAME: "GTA6 AI",
   RELEASE_DATE: "2026-11-19T00:00:00Z",
   DAILY_LIMIT: Number(process.env.NEXT_PUBLIC_DAILY_LIMIT ?? 10),

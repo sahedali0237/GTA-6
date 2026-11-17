@@ -123,8 +123,10 @@ export async function POST(req: NextRequest): Promise<Response> {
         );
       },
       onError({ error }) {
-        // Logged without forwarding anything to the client.
+        // Re-throw so the outer catch returns a clean 502 to the client
+        // instead of letting the broken stream reach the browser.
         console.error(JSON.stringify({ ts: new Date().toISOString(), upstreamError: String(error) }));
+        throw error;
       },
     });
     return result.toDataStreamResponse();

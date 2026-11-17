@@ -27,8 +27,19 @@ const MESSAGES = {
 
 type ErrorCode = "limit" | "upstream" | "forbidden" | "bad_request";
 
-function extractErrorCode(error: unknown): ErrorCode | null {
+/**
+ * Map any error thrown by useChat/append to one of our known error codes.
+ *
+ * Sources in priority order:
+ *  1. Our own API route JSON: { "error": "<code>" }
+ *  2. AI SDK streaming errors (e.g. AI_APICallError, network failures)
+ *     → these are always upstream problems, not client bugs
+ *  3. Generic network errors (TypeError "Failed to fetch", etc.)
+ */
+function extractErrorCode(error: unknown): ErrorCode {
   const raw = error instanceof Error ? error.message : String(error);
+
+  // 1. Try our own JSON payload first.
   try {
     const parsed = JSON.parse(raw) as { error?: string };
     if (
@@ -40,9 +51,28 @@ function extractErrorCode(error: unknown): ErrorCode | null {
       return parsed.error;
     }
   } catch {
-    // Not a JSON error payload — fall through to the generic message.
+    // Not a JSON error payload — continue.
   }
-  return null;
+
+  // 2. AI SDK wraps upstream failures with class names or prefixes like
+  //    "AI_APICallError", "AI_LoadAPIKeyError", "AI_NoObjectGeneratedError", etc.
+  if (/AI_[A-Z]/i.test(raw)) return "upstream";
+
+  // 3. Plain network / fetch errors (offline, CORS, timeout).
+  if (
+    /failed to fetch|networkerror|load failed|aborted|timeout/i.test(raw)
+  ) {
+    return "upstream";
+  }
+
+  // 4. HTTP status codes embedded in error strings (e.g. "429", "502", "503").
+  if (/\b(429|502|503|504)\b/.test(raw)) return "upstream";
+  if (/\b(400)\b/.test(raw)) return "bad_request";
+  if (/\b(403)\b/.test(raw)) return "forbidden";
+
+  // 5. Unknown — treat as upstream to avoid showing a confusing "bad request"
+  //    message for what is almost always a server/API problem.
+  return "upstream";
 }
 
 /**
@@ -92,10 +122,11 @@ export function ChatWidget() {
       setBanner(isQuotaExhausted() ? MESSAGES.dailyLimit : MESSAGES.perMinute);
       return;
     }
-    if (code === "upstream") {
+    if (code === "upstream" || code === "forbidden") {
       setBanner(MESSAGES.upstream);
       return;
     }
+    // "bad_request" and anything else
     setBanner(MESSAGES.badRequest);
   }, []);
 

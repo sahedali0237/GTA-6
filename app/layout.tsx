@@ -90,14 +90,12 @@ export default function RootLayout({
         ) : null}
 
         
-        {CONFIG.ADS_ENABLED && CONFIG.ADSENSE_CLIENT_ID ? (
-          <Script
-            id="adsense-init"
-            src={`https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${CONFIG.ADSENSE_CLIENT_ID}`}
-            crossOrigin="anonymous"
-            strategy="afterInteractive"
-          />
-        ) : null}
+        <Script
+          async
+          src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-7862857287477025"
+          crossOrigin="anonymous"
+          strategy="afterInteractive"
+        />
 
         <script
           type="application/ld+json"

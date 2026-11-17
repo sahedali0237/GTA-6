@@ -16,6 +16,7 @@ import { cn } from "@/lib/utils";
 
 const signInSchema = z.object({
   email: z.string().trim().email("Please enter a valid email address."),
+
   password: z.string().min(1, "Please enter your password."),
 });
 
@@ -27,13 +28,16 @@ export function SignInForm({
   googleEnabled?: boolean;
 }) {
   const router = useRouter();
+
   const [formData, setFormData] = useState<SignInFormData>({
     email: "",
     password: "",
   });
+
   const [errors, setErrors] = useState<
     Partial<Record<keyof SignInFormData, string>>
   >({});
+
   const [formError, setFormError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [googlePending, setGooglePending] = useState(false);
@@ -41,9 +45,19 @@ export function SignInForm({
   const isBusy = submitting || googlePending;
 
   const handleChange = (field: keyof SignInFormData, value: string) => {
-    setFormData((prev) => ({ ...prev, [field]: value }));
-    setErrors((prev) => ({ ...prev, [field]: undefined }));
-    if (formError) setFormError(null);
+    setFormData((prev) => ({
+      ...prev,
+      [field]: value,
+    }));
+
+    setErrors((prev) => ({
+      ...prev,
+      [field]: undefined,
+    }));
+
+    if (formError) {
+      setFormError(null);
+    }
   };
 
   const handleGoogleSignIn = async () => {
@@ -52,12 +66,18 @@ export function SignInForm({
     if (!googleEnabled) {
       const message =
         "Google sign-in requires GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET to be configured.";
+
       setFormError(message);
-      toast.error("Google sign-in unavailable", { description: message });
+
+      toast.error("Google sign-in unavailable", {
+        description: message,
+      });
+
       return;
     }
 
     setGooglePending(true);
+
     try {
       const { error } = await authClient.signIn.social({
         provider: "google",
@@ -67,35 +87,54 @@ export function SignInForm({
       if (error) {
         const message =
           error.message || "Could not start Google sign-in. Please try again.";
+
         setFormError(message);
-        toast.error("Google sign-in failed", { description: message });
+
+        toast.error("Google sign-in failed", {
+          description: message,
+        });
+
         setGooglePending(false);
       }
     } catch {
       const message = "Unable to connect to Google sign-in right now.";
+
       setFormError(message);
-      toast.error("Google sign-in failed", { description: message });
+
+      toast.error("Google sign-in failed", {
+        description: message,
+      });
+
       setGooglePending(false);
     }
   };
 
-  const handleSubmit = async (event: React.FormEvent) => {
+  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+
     setFormError(null);
 
     const result = signInSchema.safeParse(formData);
+
     if (!result.success) {
       const fieldErrors: Partial<Record<keyof SignInFormData, string>> = {};
+
       for (const issue of (result.error as ZodError).issues) {
         const path = issue.path[0] as keyof SignInFormData;
-        fieldErrors[path] = issue.message;
+
+        if (!fieldErrors[path]) {
+          fieldErrors[path] = issue.message;
+        }
       }
+
       setErrors(fieldErrors);
 
       const firstInvalid = (result.error as ZodError).issues[0]?.path[0];
+
       if (typeof firstInvalid === "string") {
         document.getElementById(firstInvalid)?.focus();
       }
+
       return;
     }
 
@@ -112,21 +151,29 @@ export function SignInForm({
       if (error) {
         const message =
           error.message || "Invalid email or password. Please try again.";
+
         setFormError(message);
+
         toast.error("Sign in failed", {
           description: message,
         });
+
         return;
       }
 
       toast.success("Welcome back", {
         description: `You're signed in to ${CONFIG.SITE_NAME}.`,
       });
+
       router.push("/");
       router.refresh();
-    } catch {
+    } catch (error) {
+      console.error("Sign in error:", error);
+
       const message = "Unable to sign in right now. Please try again.";
+
       setFormError(message);
+
       toast.error("Sign in failed", {
         description: message,
       });
@@ -146,8 +193,9 @@ export function SignInForm({
         <h2 className="font-display text-3xl tracking-wide text-text">
           Sign in
         </h2>
+
         <p className="text-sm text-muted">
-          Choose a sign-in method to access your {CONFIG.SITE_NAME} account.
+          Sign in to access your {CONFIG.SITE_NAME} account.
         </p>
       </div>
 
@@ -160,6 +208,7 @@ export function SignInForm({
             className="mt-0.5 size-4 shrink-0 text-destructive"
             aria-hidden="true"
           />
+
           <span>{formError}</span>
         </div>
       ) : null}
@@ -189,11 +238,14 @@ export function SignInForm({
 
       <div className="my-5 flex items-center gap-3" aria-hidden="true">
         <div className="h-px flex-1 bg-border/80" />
+
         <span className="text-xs text-muted">or continue with email</span>
+
         <div className="h-px flex-1 bg-border/80" />
       </div>
 
       <form onSubmit={handleSubmit} noValidate className="space-y-5">
+        {/* Email */}
         <div className="space-y-2">
           <label
             htmlFor="email"
@@ -201,6 +253,7 @@ export function SignInForm({
           >
             Email address
           </label>
+
           <Input
             id="email"
             type="email"
@@ -212,19 +265,26 @@ export function SignInForm({
             onChange={(event) => handleChange("email", event.target.value)}
             className={cn(
               "h-11 bg-surface-2/80 px-3.5",
-              errors.email && "border-destructive focus-visible:ring-destructive",
+              errors.email &&
+                "border-destructive focus-visible:ring-destructive",
             )}
             placeholder="you@example.com"
             aria-invalid={!!errors.email}
             aria-describedby={errors.email ? "email-error" : undefined}
           />
+
           {errors.email ? (
-            <p id="email-error" className="text-xs text-destructive" role="alert">
+            <p
+              id="email-error"
+              className="text-xs text-destructive"
+              role="alert"
+            >
               {errors.email}
             </p>
           ) : null}
         </div>
 
+        {/* Password */}
         <div className="space-y-2">
           <div className="flex items-center justify-between gap-2">
             <label
@@ -234,6 +294,7 @@ export function SignInForm({
               Password
             </label>
           </div>
+
           <PasswordInput
             input={
               <Input
@@ -243,7 +304,9 @@ export function SignInForm({
                 required
                 disabled={isBusy}
                 value={formData.password}
-                onChange={(event) => handleChange("password", event.target.value)}
+                onChange={(event) =>
+                  handleChange("password", event.target.value)
+                }
                 className={cn(
                   "h-11 bg-surface-2/80 px-3.5 pr-11",
                   errors.password &&
@@ -251,10 +314,13 @@ export function SignInForm({
                 )}
                 placeholder="Enter your password"
                 aria-invalid={!!errors.password}
-                aria-describedby={errors.password ? "password-error" : undefined}
+                aria-describedby={
+                  errors.password ? "password-error" : undefined
+                }
               />
             }
           />
+
           {errors.password ? (
             <p
               id="password-error"
@@ -266,6 +332,7 @@ export function SignInForm({
           ) : null}
         </div>
 
+        {/* Submit */}
         <Button
           type="submit"
           size="lg"

@@ -35,10 +35,16 @@ const websiteJsonLd = {
 
 export const metadata: Metadata = {
   metadataBase: new URL(CONFIG.SITE_URL),
+
   title:
     "GTA 6 AI Assistant – Ask Anything About Grand Theft Auto VI (Release Date, Map, Characters)",
+
   description: META_DESCRIPTION,
-  alternates: { canonical: "/" },
+
+  alternates: {
+    canonical: "/",
+  },
+
   openGraph: {
     title: "GTA 6 AI Assistant – Ask Anything About Grand Theft Auto VI",
     description: META_DESCRIPTION,
@@ -46,6 +52,7 @@ export const metadata: Metadata = {
     siteName: CONFIG.SITE_NAME,
     type: "website",
   },
+
   twitter: {
     card: "summary_large_image",
     title: "GTA 6 AI Assistant – Ask Anything About Grand Theft Auto VI",
@@ -62,44 +69,58 @@ export default function RootLayout({
 }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="en" suppressHydrationWarning>
+      <head>
+        {/* Google AdSense */}
+        <Script
+          async
+          src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-7862857287477025"
+          crossOrigin="anonymous"
+        />
+      </head>
+
       <body
         className={`${bebas.variable} ${inter.variable} bg-bg text-text antialiased`}
       >
         <Navbar />
 
         <ClientLayout>{children}</ClientLayout>
+
         <Footer />
 
         <Toaster position="bottom-right" />
 
+        {/* Google Analytics */}
         {CONFIG.GA4_ID ? (
           <>
             <Script
               src={`https://www.googletagmanager.com/gtag/js?id=${CONFIG.GA4_ID}`}
               strategy="afterInteractive"
             />
+
             <Script id="ga4-init" strategy="afterInteractive">
               {`
                 window.dataLayer = window.dataLayer || [];
-                function gtag(){dataLayer.push(arguments);}
+
+                function gtag() {
+                  dataLayer.push(arguments);
+                }
+
                 gtag('js', new Date());
-                gtag('config', '${CONFIG.GA4_ID}', { anonymize_ip: true });
+
+                gtag('config', '${CONFIG.GA4_ID}', {
+                  anonymize_ip: true
+                });
               `}
             </Script>
           </>
         ) : null}
 
-        
-        <Script
-          async
-          src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-7862857287477025"
-          crossOrigin="anonymous"
-          strategy="afterInteractive"
-        />
-
+        {/* Website structured data */}
         <script
           type="application/ld+json"
-          dangerouslySetInnerHTML={{ __html: JSON.stringify(websiteJsonLd) }}
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify(websiteJsonLd),
+          }}
         />
       </body>
     </html>

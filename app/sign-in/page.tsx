@@ -1,205 +1,112 @@
-"use client";
-
-import { useState } from "react";
-import { z, type ZodError } from "zod";
-
+import type { Metadata } from "next";
 import Link from "next/link";
-import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { toast } from "sonner";
+import { ArrowLeft } from "lucide-react";
 
-import { PasswordInput } from "@/components/PasswordInput";
-import { authClient } from "@/lib/auth-client";
-import { cn } from "@/lib/utils";
 import { CONFIG } from "@/lib/config";
+import { SignInForm } from "./SignInForm";
 
-const signInSchema = z.object({
-  email: z.string().email("Please enter a valid email address."),
-  password: z.string().min(1, "Please enter your password."),
-});
+export const dynamic = "force-dynamic";
 
-type SignInFormData = z.infer<typeof signInSchema>;
+export const metadata: Metadata = {
+  title: "Sign in",
+  alternates: { canonical: "/sign-in" },
+  robots: { index: false, follow: true },
+};
+
+const HIGHLIGHTS = [
+  {
+    num: "01.",
+    title: "Confirmed Release Intel",
+    detail:
+      "Verified Grand Theft Auto VI launch timing, console platforms, and official trailer details.",
+  },
+  {
+    num: "02.",
+    title: "Rumors Clearly Labeled",
+    detail:
+      "Every answer separates Rockstar Games announcements from unconfirmed community speculation.",
+  },
+  {
+    num: "03.",
+    title: "Fast Leonida Q&A",
+    detail:
+      "Ask about Vice City locations, Lucia and Jason, gameplay systems, or hardware upgrades.",
+  },
+] as const;
 
 export default function SignInPage() {
-  const [formData, setFormData] = useState<SignInFormData>({
-    email: "",
-    password: "",
-  });
-  const [errors, setErrors] = useState<
-    Partial<Record<keyof SignInFormData, string>>
-  >({});
-  const [submitting, setSubmitting] = useState(false);
-
-  const handleChange = (field: keyof SignInFormData, value: string) => {
-    setFormData((prev) => ({ ...prev, [field]: value }));
-    setErrors((prev) => ({ ...prev, [field]: undefined }));
-  };
-
-  const handleSubmit = async (event: React.FormEvent) => {
-    event.preventDefault();
-
-    const result = signInSchema.safeParse(formData);
-    if (!result.success) {
-      const fieldErrors: Partial<Record<keyof SignInFormData, string>> = {};
-      for (const issue of (result.error as ZodError).issues) {
-        const path = issue.path[0] as keyof SignInFormData;
-        fieldErrors[path] = issue.message;
-      }
-      setErrors(fieldErrors);
-
-      const firstInvalid = (result.error as ZodError).issues[0]?.path[0];
-      if (typeof firstInvalid === "string") {
-        document.getElementById(firstInvalid)?.focus();
-      }
-      return;
-    }
-
-    setSubmitting(true);
-    setErrors({});
-
-    try {
-      const { error } = await authClient.signIn.email({
-        email: formData.email,
-        password: formData.password,
-        callbackURL: "/",
-      });
-
-      if (error) {
-        toast.error("Sign in failed", {
-          description: "Invalid email or password.",
-        });
-        return;
-      }
-
-      toast.success("Welcome back", {
-        description: `You're signed in to ${CONFIG.SITE_NAME}.`,
-      });
-    } catch {
-      toast.error("Sign in failed", {
-        description: "Invalid email or password.",
-      });
-    } finally {
-      setSubmitting(false);
-    }
-  };
+  const googleEnabled = Boolean(
+    process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET,
+  );
 
   return (
-    <div className="flex-1 flex flex-col items-center justify-center px-4 sm:px-6 pb-12">
-      <Link
-        href="/"
-        className="mb-8 flex items-center gap-2 font-display text-3xl tracking-wide text-text"
-        aria-label={`${CONFIG.SITE_NAME} home`}
-      >
-        <span className="text-gradient">GTA6</span> AI
-      </Link>
+    <section className="relative isolate overflow-hidden px-4 py-10 sm:px-6 sm:py-16">
+      <div
+        className="pointer-events-none absolute inset-0 -z-10 opacity-30"
+        style={{
+          background:
+            "radial-gradient(55% 45% at 25% 15%, var(--accent-from) 0%, transparent 65%), radial-gradient(45% 40% at 80% 25%, var(--accent-to) 0%, transparent 60%)",
+        }}
+        aria-hidden="true"
+      />
 
-      <Card className="w-full max-w-md animate-fade-in">
-        <CardHeader className="text-center">
-          <CardTitle className="text-2xl font-display tracking-tight">
-            Sign in
-          </CardTitle>
-          <CardDescription>
-            Sign in to {CONFIG.SITE_NAME} and keep asking about GTA 6.
-          </CardDescription>
-        </CardHeader>
+      <div className="mx-auto w-full max-w-5xl">
+        <div className="mb-8">
+          <Link
+            href="/"
+            className="inline-flex items-center gap-2 text-sm text-muted transition-colors hover:text-text whitespace-nowrap"
+          >
+            <ArrowLeft className="size-4" aria-hidden="true" />
+            Back to {CONFIG.SITE_NAME}
+          </Link>
+        </div>
 
-        <CardContent className="space-y-5">
-          <form onSubmit={handleSubmit} noValidate>
-            <div className="space-y-2">
-              <label
-                htmlFor="email"
-                className="text-sm font-medium text-muted block"
-              >
-                Email address
-              </label>
-              <Input
-                id="email"
-                type="email"
-                autoComplete="email"
-                required
-                disabled={submitting}
-                value={formData.email}
-                onChange={(event) => handleChange("email", event.target.value)}
-                className={cn("w-full", errors.email && "border-destructive")}
-                placeholder="you@example.com"
-                aria-invalid={!!errors.email}
-                aria-describedby={errors.email ? "email-error" : undefined}
-              />
-              {errors.email && (
-                <p id="email-error" className="text-sm text-destructive" role="alert">
-                  {errors.email}
-                </p>
-              )}
+        <div className="grid grid-cols-1 items-center gap-10 lg:grid-cols-12 lg:gap-12">
+          <div className="space-y-6 lg:col-span-6">
+            <div className="space-y-3">
+              <p className="text-xs font-medium text-muted">
+                <span>{CONFIG.SITE_NAME}</span>
+                <span className="mx-2" aria-hidden="true">
+                  ·
+                </span>
+                <span>Confirmed Facts Only</span>
+              </p>
+
+              <h1 className="max-w-lg text-balance font-display text-4xl leading-[1.05] tracking-wide text-text sm:text-5xl lg:text-6xl">
+                Return to the{" "}
+                <span className="text-gradient">Leonida Briefing</span>
+              </h1>
+
+              <p className="max-w-md text-base leading-relaxed text-muted">
+                Sign in to pick up your GTA 6 research, explore verified map and
+                character details, and stay ready for launch day.
+              </p>
             </div>
 
-            <div className="space-y-2">
-              <label
-                htmlFor="password"
-                className="text-sm font-medium text-muted block"
-              >
-                Password
-              </label>
-              <PasswordInput
-                input={
-                  <Input
-                    id="password"
-                    type="password"
-                    autoComplete="current-password"
-                    required
-                    disabled={submitting}
-                    value={formData.password}
-                    onChange={(event) => handleChange("password", event.target.value)}
-                    className={cn("w-full pr-11", errors.password && "border-destructive")}
-                    placeholder="••••••••"
-                    aria-invalid={!!errors.password}
-                    aria-describedby={
-                      errors.password ? "password-error" : undefined
-                    }
-                  />
-                }
-              />
-              {errors.password && (
-                <p
-                  id="password-error"
-                  className="text-sm text-destructive"
-                  role="alert"
-                >
-                  {errors.password}
-                </p>
-              )}
+            <div className="divide-y divide-border/70 border-t border-border/70 pt-2">
+              {HIGHLIGHTS.map((item) => (
+                <div key={item.num} className="py-4">
+                  <h2 className="text-sm font-semibold text-text">
+                    <span className="mr-2 text-accent-to tabular-nums">
+                      {item.num}
+                    </span>
+                    {item.title}
+                  </h2>
+                  <p className="mt-1 text-sm leading-relaxed text-muted">
+                    {item.detail}
+                  </p>
+                </div>
+              ))}
             </div>
+          </div>
 
-            <Button
-              type="submit"
-              size="lg"
-              className="w-full"
-              disabled={submitting}
-            >
-              {submitting ? "Signing in…" : "Sign in"}
-            </Button>
-          </form>
-        </CardContent>
-
-        <CardFooter className="flex flex-col gap-3 text-center">
-          <p className="text-sm text-muted">
-            Need an account?{" "}
-            <a
-              href="/sign-up"
-              className="text-accent-from underline-offset-4 hover:underline"
-            >
-              Create account
-            </a>
-          </p>
-        </CardFooter>
-      </Card>
-    </div>
+          <div className="lg:col-span-6">
+            <div className="mx-auto w-full max-w-md lg:ml-auto lg:mr-0">
+              <SignInForm googleEnabled={googleEnabled} />
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
   );
 }

@@ -1,12 +1,10 @@
-"use client";
-
 import type { Metadata, Viewport } from "next";
 import { Bebas_Neue, Inter } from "next/font/google";
 import Script from "next/script";
 
 import { ClientLayout } from "@/components/ClientLayout";
 import { Footer } from "@/components/Footer";
-import {Navbar} from "@/components/Navbar"; 
+import Navbar from "@/components/navbar";
 import { Toaster } from "@/components/ui/sonner";
 import { CONFIG } from "@/lib/config";
 

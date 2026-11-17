@@ -350,10 +350,10 @@ export function SignUpForm() {
       <p className="mt-6 text-center text-sm text-white/60">
         Already have an account?{" "}
         <Link
-          href="/login"
+          href="/sign-in"
           className="font-medium text-white underline underline-offset-2"
         >
-          Log in
+          Sign in
         </Link>
       </p>
     </div>
